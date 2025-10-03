@@ -1,29 +1,74 @@
-{
-  "id": "demo",
-  "title": "Demo Quiz",
-  "scoring": { "partialCredit": true },
-  "items": [
-    {
-      "id": "cloze-1",
-      "type": "gap-fill",
-      "body": "We climbed ___ the rocks and moved ___ the shore.",
-      "gaps": [
-        { "index": 0, "accepted": ["onto"] },
-        { "index": 1, "accepted": ["along"] }
-      ],
-      "answer": { "type": "gap", "acceptedByIndex": { "0": ["onto"], "1": ["along"] } },
-      "points": 2
-    },
-    {
-      "id": "mcq-1",
-      "type": "mcq",
-      "prompt": "Pick the movement preposition:",
-      "options": [
-        { "id": "a", "text": "on" },
-        { "id": "b", "text": "into" }
-      ],
-      "answer": { "type": "mcq", "correctOptionIds": ["b"] },
-      "points": 1
+[
+  {
+    "id": "order-1",
+    "type": "order",
+    "segments": [
+      { "id": "a", "text": "First, we planned the route." },
+      { "id": "b", "text": "Then, we packed enough water." },
+      { "id": "c", "text": "Finally, we set off before sunrise." }
+    ],
+    "answer": { "type": "order", "correctOrder": ["a","b","c"] },
+    "points": 2
+  },
+  {
+    "id": "tokens-1",
+    "type": "token-select",
+    "text": "She don't like walking in the rain.",
+    "selectMode": "single",
+    "answer": { "type": "tokens", "correctTokenIds": ["1"] },
+    "points": 1,
+    "feedback": {
+      "incorrect": "Look for the verb form that disagrees with **She**.",
+      "explanation": "`She **doesn't** like ...` is the correct form."
     }
-  ]
-}
+  },
+  {
+    "id": "match-1",
+    "type": "match",
+    "left": [
+      { "id": "l1", "text": "on time" },
+      { "id": "l2", "text": "at night" },
+      { "id": "l3", "text": "in a hurry" }
+    ],
+    "right": [
+      { "id": "r1", "text": "after dark" },
+      { "id": "r2", "text": "punctual" },
+      { "id": "r3", "text": "quickly" }
+    ],
+    "answer": { "type": "match", "pairs": [["l1","r2"],["l2","r1"],["l3","r3"]] },
+    "points": 3
+  },
+  {
+    "id": "word-order-1",
+    "type": "word-order",
+    "text": "Always check the weather before you hike.",
+    "answer": { "type": "word-order", "correctOrder": ["0","1","2","3","4","5","6"] },
+    "points": 2
+  },
+  {
+    "id": "bank-1",
+    "type": "bank-fill",
+    "body": "She ___ the bus and sat ___ the back.",
+    "bank": [
+      { "id": "got-on", "text": "got on" },
+      { "id": "at", "text": "at" },
+      { "id": "on", "text": "on" }
+    ],
+    "answer": {
+      "type": "bank",
+      "correctTokenIdByIndex": { "0": ["got-on"], "1": ["at","on"] }
+    },
+    "points": 2
+  },
+  {
+    "id": "dropdown-1",
+    "type": "dropdown-fill",
+    "body": "It depends ___ the weather and ___ my schedule.",
+    "optionsByIndex": {
+      "0": [{ "id": "on", "text": "on" }, { "id": "of", "text": "of" }],
+      "1": [{ "id": "on2", "text": "on" }, { "id": "from", "text": "from" }]
+    },
+    "answer": { "type": "dropdown", "correctOptionIdByIndex": { "0": "on", "1": "on2" } },
+    "points": 2
+  }
+]

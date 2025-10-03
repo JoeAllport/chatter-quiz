@@ -79,7 +79,7 @@ function MediaGrid({ media }: { media: NonNullable<QuizItem["feedback"]>["media"
   if (!media?.length) return null;
   return (
     <div className={s.mediaGrid}>
-      {media.map((m, i) => {
+      {media.map((m: Media, i: number) => {
         if (m.kind === "image" || m.kind === "gif") {
           return (
             <figure className={s.mediaItem} key={i}>

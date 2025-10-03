@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Quiz, QuizItem } from "@/lib/quiz";
 import { ResponseMap } from "@/lib/scoring";
-import { MCQ, GapFill } from "./items";
+import { MCQ, GapFill, Orderer, TokenSelect, MatchPairs, WordOrder, BankFill, DropdownFill } from "./items";
 import { FeedbackPanel } from "./FeedbackPanel";
 import s from "./QuizRunner.module.css";
+import type { Media } from "@/lib/quiz";
 
 export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const [answers, setAnswers] = useState<ResponseMap>({});
@@ -33,12 +34,16 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   };
 
   function renderItem(q: QuizItem) {
-    if (q.type === "mcq")
-      return <MCQ item={q} value={answers[q.id] ?? []} onChange={(v) => set(q.id, v)} />;
-    if (q.type === "gap-fill")
-      return <GapFill item={q} value={answers[q.id] ?? []} onChange={(v) => set(q.id, v)} />;
-    return <p>Unsupported type</p>;
-  }
+  if (q.type === "mcq") return <MCQ item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "gap-fill") return <GapFill item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "order") return <Orderer item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "token-select") return <TokenSelect item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "match") return <MatchPairs item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "word-order") return <WordOrder item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "bank-fill") return <BankFill item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  if (q.type === "dropdown-fill") return <DropdownFill item={q} value={answers[q.id] ?? []} onChange={(v)=>set(q.id,v)} />;
+  return <p>Unsupported type</p>;
+}
 
   const answered = useMemo(() => isAnswered(item, answers[item?.id]), [item, answers]);
   const isChecked = !!checked[item?.id];
@@ -72,6 +77,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
           Question {Math.min(step + 1, totalItems)} of {totalItems}
         </div>
 
+{item.stimulus ? <Stimulus media={item.stimulus} /> : null}
         {renderItem(item)}
 
         {isChecked && (
@@ -112,12 +118,15 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
 /* helpers */
 function isAnswered(item: QuizItem | undefined, val: string[] | undefined) {
   if (!item) return false;
-  if (item.type === "mcq") return Array.isArray(val) && val.length > 0;
-  if (item.type === "gap-fill") {
-    const gaps = item.gaps ?? [];
-    const vv = val ?? [];
-    return gaps.every((_, i) => (vv[i] ?? "").toString().trim().length > 0);
-  }
+  const v = val ?? [];
+  if (item.type === "mcq") return v.length > 0;
+  if (item.type === "gap-fill") return (item.gaps ?? []).every((_, i) => (v[i] ?? "").trim().length > 0);
+  if (item.type === "order") return v.length === (item.segments ?? []).length;
+  if (item.type === "token-select") return v.length > 0;
+  if (item.type === "match") return v.length === (item.left ?? []).length;
+  if (item.type === "word-order") return v.length === ((item.words && item.words.length) ? item.words.length : ((item.text ?? "").split(/\s+/).filter(Boolean).length));
+  if (item.type === "bank-fill") return (item.body ?? "").split("___").length - 1 <= v.filter(Boolean).length;
+  if (item.type === "dropdown-fill") return (item.body ?? "").split("___").length - 1 <= v.filter(Boolean).length;
   return false;
 }
 
@@ -176,4 +185,29 @@ function scoreOneItem(quiz: Quiz, item: QuizItem, val: string[] | undefined): nu
   }
 
   return 0;
+}
+function Stimulus({ media }: { media: Media[] }) {
+  return (
+    <div style={{ margin: "12px 0" }}>
+      {media.map((m, i) =>
+        (m.kind === "image" || m.kind === "gif") ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={i} src={m.src} alt={m.alt ?? ""} loading="lazy" width={m.width} height={m.height}
+               style={{ maxWidth:"100%", borderRadius:12, marginBottom:8 }} />
+        ) : m.kind === "audio" ? (
+          <audio key={i} controls preload="none" style={{ width:"100%", marginBottom:8 }}><source src={m.src} /></audio>
+        ) : (
+          <video
+            key={i}
+            controls
+            preload="none"
+            poster={m.kind === "video" ? m.poster : undefined}
+            style={{ width:"100%", borderRadius:12, marginBottom:8 }}
+          >
+            <source src={m.src} />
+          </video>
+        )
+      )}
+    </div>
+  );
 }
