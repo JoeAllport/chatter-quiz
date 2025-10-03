@@ -1,41 +1,40 @@
 import QuizRunner from "@/components/QuizRunner";
 import { Quiz } from "@/lib/quiz";
-import fs from "node:fs/promises";
-import path from "node:path";
+
+type SourcePref = "auto" | "blob" | "local";
 
 export default async function QuizPage({
   params,
   searchParams,
 }: {
   params: { slug: string };
-  searchParams?: { source?: "auto" | "blob" | "local" };
+  searchParams?: { source?: SourcePref };
 }) {
   const slug = params.slug;
-  const preferred = searchParams?.source ?? (process.env.NEXT_PUBLIC_SOURCE as any) ?? "auto";
 
-  // 1) Try Blob (if configured)
-  let quiz: Quiz | null = null;
+  const envPreferred = process.env.NEXT_PUBLIC_SOURCE as SourcePref | undefined;
+  const preferred: SourcePref = searchParams?.source ?? envPreferred ?? "auto";
+
+  // Try Blob first
   if ((preferred === "auto" || preferred === "blob") && process.env.NEXT_PUBLIC_BLOB_BASE) {
     try {
-      const url = `${process.env.NEXT_PUBLIC_BLOB_BASE}/quizzes/${slug}.json`;
-      const res = await fetch(url, { cache: "no-store" });
-      if (res.ok) quiz = (await res.json()) as Quiz;
-    } catch {
-      // ignore and fall back
-    }
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BLOB_BASE}/quizzes/${slug}.json`,
+        { cache: "no-store" }
+      );
+      if (res.ok) {
+        const quiz = (await res.json()) as Quiz;
+        return <QuizRunner quiz={quiz} />;
+      }
+    } catch {}
   }
 
-  // 2) Fallback to local /public
-  if (!quiz && (preferred === "auto" || preferred === "local")) {
-    try {
-      const file = path.join(process.cwd(), "public", "quizzes", `${slug}.json`);
-      const raw = await fs.readFile(file, "utf-8");
-      quiz = JSON.parse(raw) as Quiz;
-    } catch {
-      // ignore
-    }
+  // Fallback to public asset
+  const resLocal = await fetch(`/quizzes/${slug}.json`, { cache: "no-store" });
+  if (resLocal.ok) {
+    const quiz = (await resLocal.json()) as Quiz;
+    return <QuizRunner quiz={quiz} />;
   }
 
-  if (!quiz) return <div>Quiz “{slug}” not found.</div>;
-  return <QuizRunner quiz={quiz} />;
+  return <div>Quiz “{slug}” not found.</div>;
 }

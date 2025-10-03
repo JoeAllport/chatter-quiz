@@ -1,6 +1,9 @@
 import { Quiz } from "./quiz";
 
-export function scoreQuiz(quiz: Quiz, responses: Record<string, any>) {
+// each item stores an array of strings (MCQ choices or gap entries)
+export type ResponseMap = Record<string, string[] | undefined>;
+
+export function scoreQuiz(quiz: Quiz, responses: ResponseMap) {
   let total = 0, earned = 0;
 
   for (const item of quiz.items) {
@@ -21,9 +24,10 @@ export function scoreQuiz(quiz: Quiz, responses: Record<string, any>) {
 
     if (a.type === "gap") {
       const gaps = item.gaps ?? [];
+      const vals = r ?? [];
       let ok = 0;
       gaps.forEach((g, i) => {
-        const t = (r?.[i] ?? "").trim().toLowerCase();
+        const t = (vals[i] ?? "").trim().toLowerCase();
         const acc = (a.acceptedByIndex[i] ?? g.accepted ?? []).map(s => s.trim().toLowerCase());
         if (acc.includes(t)) ok++;
       });

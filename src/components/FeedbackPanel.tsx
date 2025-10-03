@@ -1,6 +1,9 @@
 "use client";
 import s from "./FeedbackPanel.module.css";
-import { QuizItem } from "@/lib/quiz";
+import { QuizItem, Media } from "@/lib/quiz";
+
+type PerOptionEntry = { text?: string; media?: Media[] };
+type PerGapEntry = { text?: string; media?: Media[] };
 
 export function FeedbackPanel({
   item,
@@ -9,7 +12,7 @@ export function FeedbackPanel({
   premiumUnlocked = true,
 }: {
   item: QuizItem;
-  value: any;
+  value: string[] | undefined;
   correct: boolean;
   premiumUnlocked?: boolean;
 }) {
@@ -33,15 +36,12 @@ export function FeedbackPanel({
     <div className={s.wrap}>
       <div className={s.head}>{head}</div>
 
-      {fb.explanation && (
-        <div className={s.text} dangerouslySetInnerHTML={{ __html: fb.explanation }} />
-      )}
+      {fb.explanation && <div className={s.text} dangerouslySetInnerHTML={{ __html: fb.explanation }} />}
 
-      {/* Per-option feedback */}
       {showPerOption && (
         <div className={s.text}>
-          {value.map((optId: string) => {
-            const entry = fb.perOption![optId];
+          {value!.map((optId) => {
+            const entry = fb.perOption![optId] as PerOptionEntry | undefined;
             if (!entry) return null;
             return (
               <div key={optId} style={{ marginBottom: 8 }}>
@@ -53,23 +53,23 @@ export function FeedbackPanel({
         </div>
       )}
 
-      {/* Per-gap feedback */}
       {showPerGap && (
         <div className={s.text}>
-          {Object.entries(fb.perGap!).map(([idx, entry]) => {
+          {Object.entries(fb.perGap!).map(([idx, row]) => {
+            const entry = row as PerGapEntry | undefined;
+            if (!entry) return null;
             const user = (value?.[Number(idx)] ?? "").toString();
             return (
               <div key={idx} style={{ marginBottom: 8 }}>
                 <div className={s.badge}>Gap {Number(idx) + 1}</div> {entry.text}
                 <div className={s.subtle}>You wrote: <code>{user || "—"}</code></div>
-                {"media" in entry! && (entry as any).media && <MediaGrid media={(entry as any).media} />}
+                {entry.media && <MediaGrid media={entry.media} />}
               </div>
             );
           })}
         </div>
       )}
 
-      {/* General media gallery */}
       {fb.media && <MediaGrid media={fb.media} />}
     </div>
   );

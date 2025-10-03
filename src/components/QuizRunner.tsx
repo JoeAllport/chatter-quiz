@@ -2,53 +2,64 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Quiz, QuizItem } from "@/lib/quiz";
-import { scoreQuiz } from "@/lib/scoring";
+import { scoreQuiz, ResponseMap } from "@/lib/scoring";
 import { MCQ, GapFill } from "./items";
 import { FeedbackPanel } from "./FeedbackPanel";
 import s from "./QuizRunner.module.css";
 
 export default function QuizRunner({ quiz }: { quiz: Quiz }) {
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<ResponseMap>({});
   const [step, setStep] = useState(0);
-  const [result, setResult] = useState<{ earned: number; total: number; pct: number } | null>(null);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [earnedByItem, setEarnedByItem] = useState<Record<string, number>>({});
 
   const item = quiz.items[step];
   const totalItems = quiz.items.length;
+  const totalPoints = useMemo(
+    () => quiz.items.reduce((acc, it) => acc + (it.points ?? 1), 0),
+    [quiz.items]
+  );
   const pct = totalItems > 0 ? Math.round((step / totalItems) * 100) : 0;
 
-  // Focus the first interactive element on step change
   const stepRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = stepRef.current?.querySelector("input,button,select,textarea") as HTMLElement | null;
     el?.focus?.();
   }, [step]);
 
-  const set = (id: string, v: any) => setAnswers((a) => ({ ...a, [id]: v }));
+  const set = (id: string, v: string[]) => {
+    setAnswers((a) => ({ ...a, [id]: v }));
+    setChecked((c) => ({ ...c, [id]: false }));
+  };
 
-  function renderItem(item: QuizItem) {
-    if (item.type === "mcq") {
-      return <MCQ item={item} value={answers[item.id] ?? []} onChange={(v) => set(item.id, v)} />;
-    }
-    if (item.type === "gap-fill") {
-      return <GapFill item={item} value={answers[item.id] ?? []} onChange={(v) => set(item.id, v)} />;
-    }
+  function renderItem(q: QuizItem) {
+    if (q.type === "mcq")
+      return <MCQ item={q} value={answers[q.id] ?? []} onChange={(v) => set(q.id, v)} />;
+    if (q.type === "gap-fill")
+      return <GapFill item={q} value={answers[q.id] ?? []} onChange={(v) => set(q.id, v)} />;
     return <p>Unsupported type</p>;
   }
 
   const answered = useMemo(() => isAnswered(item, answers[item?.id]), [item, answers]);
+  const isChecked = !!checked[item?.id];
+  const thisEarned = earnedByItem[item?.id] ?? 0;
+  const earnedSoFar = useMemo(
+    () => Object.values(earnedByItem).reduce((a, b) => a + (b || 0), 0),
+    [earnedByItem]
+  );
 
-  function handleNext() {
-    if (step < totalItems - 1) setStep(step + 1);
+  function handleCheck() {
+    if (!item) return;
+    const val = answers[item.id];
+    const pts = scoreOneItem(quiz, item, val);
+    setChecked((c) => ({ ...c, [item.id]: true }));
+    setEarnedByItem((m) => ({ ...m, [item.id]: pts }));
   }
 
-  function handlePrev() {
-    if (step > 0) setStep(step - 1);
-  }
+  function handleNext() { if (step < totalItems - 1) setStep(step + 1); }
+  function handlePrev() { if (step > 0) setStep(step - 1); }
 
-  function handleSubmit() {
-    const r = scoreQuiz(quiz, answers);
-    setResult(r);
-  }
+  const finalResult = useMemo(() => scoreQuiz(quiz, answers), [quiz, answers]);
 
   return (
     <div className={s.wrapper}>
@@ -65,60 +76,54 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
 
         {renderItem(item)}
 
-        {result && (
+        {isChecked && (
+          <div className={s.score} style={{ marginTop: 12 }}>
+            <strong>
+              This question:&nbsp;{thisEarned}/{item?.points ?? 1} point{(item?.points ?? 1) === 1 ? "" : "s"}
+            </strong>
+          </div>
+        )}
+
+        {isChecked && (
           <FeedbackPanel
             item={item}
             value={answers[item?.id]}
             correct={isItemCorrect(item, answers[item?.id])}
-            premiumUnlocked={true} // wire to real auth/flag later
+            premiumUnlocked={true}
           />
         )}
 
         <div className={s.actions}>
-          <button className={s.btn} onClick={handlePrev} disabled={step === 0}>
-            Back
+          <button className={s.btn} onClick={handlePrev} disabled={step === 0}>Back</button>
+          <button className={`${s.btn} ${s.btnPrimary}`} onClick={handleCheck} disabled={!answered}>
+            {isChecked ? "Re-check" : "Check"}
           </button>
-
-          {step < totalItems - 1 ? (
-            <button className={`${s.btn} ${s.btnPrimary}`} onClick={handleNext} disabled={!answered}>
-              Next
-            </button>
-          ) : (
-            <button className={`${s.btn} ${s.btnPrimary}`} onClick={handleSubmit} disabled={!answered}>
-              Finish &amp; Score
-            </button>
-          )}
+          <button className={s.btn} onClick={handleNext} disabled={step >= totalItems - 1 || !isChecked}>
+            Next
+          </button>
         </div>
       </div>
 
-      {result && (
-        <div className={s.score}>
-          <strong>Score:</strong> {result.earned}/{result.total} ({result.pct}%)
-          <div style={{ marginTop: 8 }}>
-            <button className={s.btn} onClick={() => setStep(0)}>
-              Review
-            </button>
-          </div>
-        </div>
-      )}
+      <div className={s.score}>
+        <strong>Score so far:</strong> {earnedSoFar}/{totalPoints}
+      </div>
     </div>
   );
 }
 
-/* ---------- helpers ---------- */
-
-function isAnswered(item: QuizItem | undefined, val: any) {
+/* helpers */
+function isAnswered(item: QuizItem | undefined, val: string[] | undefined) {
   if (!item) return false;
   if (item.type === "mcq") return Array.isArray(val) && val.length > 0;
   if (item.type === "gap-fill") {
     const gaps = item.gaps ?? [];
-    if (!Array.isArray(val)) return false;
-    return gaps.every((_, i) => (val[i] ?? "").toString().trim().length > 0);
+    const vv = val ?? [];
+    return gaps.every((_, i) => (vv[i] ?? "").toString().trim().length > 0);
   }
   return false;
 }
 
-function isItemCorrect(item: QuizItem | undefined, val: any): boolean {
+function isItemCorrect(item: QuizItem | undefined, val: string[] | undefined): boolean {
   if (!item) return false;
 
   if (item.answer.type === "mcq") {
@@ -131,17 +136,46 @@ function isItemCorrect(item: QuizItem | undefined, val: any): boolean {
 
   if (item.answer.type === "gap") {
     const gaps = item.gaps ?? [];
-    if (!Array.isArray(val)) return false;
-    // Type guard to ensure acceptedByIndex exists
-    const answer = item.answer as { type: "gap"; acceptedByIndex: Record<number, string[]> };
+    const vv = val ?? [];
     return gaps.every((g, i) => {
-      const t = (val?.[i] ?? "").toString().trim().toLowerCase();
-      const acc = (answer.acceptedByIndex[i] ?? g.accepted ?? []).map((s: string) =>
-        s.trim().toLowerCase()
-      );
+      const t = (vv[i] ?? "").toString().trim().toLowerCase();
+      let acc: string[] = [];
+      if (item.answer.type === "gap") {
+        acc = (item.answer.acceptedByIndex[i] ?? g.accepted ?? []).map((s) => s.trim().toLowerCase());
+      } else {
+        acc = (g.accepted ?? []).map((s) => s.trim().toLowerCase());
+      }
       return acc.includes(t);
     });
   }
 
   return false;
+}
+
+function scoreOneItem(quiz: Quiz, item: QuizItem, val: string[] | undefined): number {
+  const pts = item.points ?? 1;
+
+  if (item.answer.type === "mcq") {
+    const correct = new Set(item.answer.correctOptionIds);
+    const chosen = new Set<string>(val ?? []);
+    const exact = correct.size === chosen.size && [...correct].every((id) => chosen.has(id));
+    return exact ? pts : 0;
+  }
+
+  if (item.answer.type === "gap") {
+    const gaps = item.gaps ?? [];
+    const vv = val ?? [];
+    let ok = 0;
+    gaps.forEach((g, i) => {
+      const t = (vv[i] ?? "").toString().trim().toLowerCase();
+      const acc =
+        item.answer.type === "gap"
+          ? (item.answer.acceptedByIndex[i] ?? g.accepted ?? []).map((s) => s.trim().toLowerCase())
+          : (g.accepted ?? []).map((s) => s.trim().toLowerCase());
+      if (acc.includes(t)) ok++;
+    });
+    return quiz.scoring?.partialCredit ? (ok / gaps.length) * pts : ok === gaps.length ? pts : 0;
+  }
+
+  return 0;
 }

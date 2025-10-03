@@ -24,7 +24,8 @@ export function MCQ({
 
   return (
     <div>
-      {item.prompt && <p className={s.prompt} dangerouslySetInnerHTML={{ __html: item.prompt }} />}
+// inside MCQ()
+{item.prompt ? <p className={s.prompt} dangerouslySetInnerHTML={{ __html: item.prompt }} /> : null}
       {multi && <div className={s.multiNote}>Select all that apply</div>}
 
       <div className={s.list} role={multi ? "group" : "radiogroup"} aria-label="options">
