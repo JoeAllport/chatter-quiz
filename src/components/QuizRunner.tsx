@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Quiz, QuizItem } from "@/lib/quiz";
-import { scoreQuiz, ResponseMap } from "@/lib/scoring";
+import { ResponseMap } from "@/lib/scoring";
 import { MCQ, GapFill } from "./items";
 import { FeedbackPanel } from "./FeedbackPanel";
 import s from "./QuizRunner.module.css";
