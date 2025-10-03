@@ -1,12 +1,22 @@
 "use client";
+
+import React from "react";
 import { QuizItem } from "@/lib/quiz";
 import s from "./OptionBars.module.css";
 
 /* ---- MCQ with option bars ---- */
 export function MCQ({
-  item, value = [], onChange
-}:{ item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
-  const multi = item.answer.type === "mcq" && item.answer.correctOptionIds.length > 1;
+  item,
+  value = [],
+  onChange,
+}: {
+  item: QuizItem;
+  value?: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const multi =
+    item.answer.type === "mcq" &&
+    item.answer.correctOptionIds.length > 1;
 
   const toggle = (id: string) => {
     if (multi) {
@@ -18,17 +28,34 @@ export function MCQ({
     }
   };
 
-  const onKey = (e: React.KeyboardEvent<HTMLButtonElement>, id: string) => {
-    if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggle(id); }
+  const onKey = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    id: string
+  ) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      toggle(id);
+    }
   };
 
   return (
     <div>
-// inside MCQ()
-{item.prompt ? <p className={s.prompt} dangerouslySetInnerHTML={{ __html: item.prompt }} /> : null}
-      {multi && <div className={s.multiNote}>Select all that apply</div>}
+      {item.prompt ? (
+        <p
+          className={s.prompt}
+          dangerouslySetInnerHTML={{ __html: item.prompt }}
+        />
+      ) : null}
 
-      <div className={s.list} role={multi ? "group" : "radiogroup"} aria-label="options">
+      {multi ? (
+        <div className={s.multiNote}>Select all that apply</div>
+      ) : null}
+
+      <div
+        className={s.list}
+        role={multi ? "group" : "radiogroup"}
+        aria-label="options"
+      >
         {item.options?.map((opt) => {
           const selected = value.includes(opt.id);
           return (
@@ -53,8 +80,14 @@ export function MCQ({
 
 /* ---- Gap fill ---- */
 export function GapFill({
-  item, value = [], onChange
-}:{ item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
+  item,
+  value = [],
+  onChange,
+}: {
+  item: QuizItem;
+  value?: string[];
+  onChange: (v: string[]) => void;
+}) {
   const parts = (item.body ?? "").split("___");
   const gaps = item.gaps ?? [];
 
@@ -63,9 +96,9 @@ export function GapFill({
       {parts.map((chunk, i) => (
         <span key={i}>
           {chunk}
-          {i < gaps.length && (
+          {i < gaps.length ? (
             <input
-              aria-label={`gap ${i+1}`}
+              aria-label={`gap ${i + 1}`}
               className={s.gapInput}
               value={value[i] ?? ""}
               onChange={(e) => {
@@ -74,7 +107,7 @@ export function GapFill({
                 onChange(next);
               }}
             />
-          )}
+          ) : null}
         </span>
       ))}
     </p>

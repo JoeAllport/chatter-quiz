@@ -83,7 +83,7 @@ function MediaGrid({ media }: { media: NonNullable<QuizItem["feedback"]>["media"
         if (m.kind === "image" || m.kind === "gif") {
           return (
             <figure className={s.mediaItem} key={i}>
-              <img src={m.src} alt={m.alt ?? ""} loading="lazy" width={m.width} height={m.height} />
+<img src={m.src} alt={m.alt ?? ""} loading="lazy" width={m.width} height={m.height} />
               {m.alt && <figcaption className={s.caption}>{m.alt}</figcaption>}
             </figure>
           );

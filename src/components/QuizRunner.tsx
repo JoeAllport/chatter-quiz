@@ -59,8 +59,6 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   function handleNext() { if (step < totalItems - 1) setStep(step + 1); }
   function handlePrev() { if (step > 0) setStep(step - 1); }
 
-  const finalResult = useMemo(() => scoreQuiz(quiz, answers), [quiz, answers]);
-
   return (
     <div className={s.wrapper}>
       <div className={s.title}>{quiz.title}</div>
