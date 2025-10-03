@@ -1,0 +1,31 @@
+{
+  "id": "island-prepositions",
+  "title": "Stranded on the Island",
+  "scoring": { "partialCredit": true },
+  "items": [
+    {
+      "id": "cloze-1",
+      "type": "gap-fill",
+      "body": "We climbed ___ the rocks and moved ___ the shore, then swam ___ the lagoon.",
+      "gaps": [
+        { "index": 0, "accepted": ["onto"] },
+        { "index": 1, "accepted": ["along"] },
+        { "index": 2, "accepted": ["across"] }
+      ],
+      "answer": { "type": "gap", "acceptedByIndex": { "0": ["onto"], "1": ["along"], "2": ["across"] } },
+      "points": 3
+    },
+    {
+      "id": "mcq-1",
+      "type": "mcq",
+      "prompt": "Choose the two <strong>movement</strong> prepositions:",
+      "options": [
+        { "id": "a", "text": "toward" },
+        { "id": "b", "text": "on" },
+        { "id": "c", "text": "into" }
+      ],
+      "answer": { "type": "mcq", "correctOptionIds": ["a","c"] },
+      "points": 2
+    }
+  ]
+}

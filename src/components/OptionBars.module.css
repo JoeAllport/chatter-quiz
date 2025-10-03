@@ -1,0 +1,39 @@
+.list {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.bar {
+  width: 100%;
+  text-align: left;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius);
+  padding: var(--s-4) var(--s-5);
+  background: var(--bg-muted);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  line-height: 1.35;
+}
+.bar:hover { background: #eef2f7; }
+.bar:focus { outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.25); }
+
+.selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.multiNote { font-size: 12px; opacity: .7; margin: var(--s-2) 0 var(--s-2); }
+.prompt { margin-bottom: var(--s-3); }
+
+/* gap-fill input */
+.gapInput {
+  display: inline-block;
+  min-width: 140px;
+  padding: 10px 12px;
+  margin: 0 var(--s-2);
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+}

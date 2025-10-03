@@ -1,3 +1,18 @@
+:root{
+  /* spacing scale */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-7:32px;
+
+  /* radius + colors */
+  --radius:14px;
+  --border:#e5e7eb;
+  --bg-muted:#f7f8fa;
+  --primary:#2563eb;
+}
+
+html, body { line-height:1.6; }
+p { margin: 0 0 var(--s-3) 0; }
+
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

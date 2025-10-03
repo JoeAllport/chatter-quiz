@@ -1,0 +1,10 @@
+.wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--s-4); background: #fff; margin-top: var(--s-4); }
+.badge { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; background:#eef2f7; margin-right:8px; }
+.head { font-weight:600; margin: 0 0 var(--s-3); }
+.text { margin: 0 0 var(--s-3); }
+.mediaGrid { display:grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.mediaItem { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#f9fafb; }
+.mediaItem img, .mediaItem video { display:block; width:100%; height:auto; }
+.caption { font-size:12px; opacity:.75; padding:6px 10px; }
+.lock { opacity:.7; font-style:italic; }
+.subtle { font-size:12px; opacity:.7; margin-top:6px; }
