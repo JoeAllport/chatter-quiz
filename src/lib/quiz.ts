@@ -1,36 +1,16 @@
+// src/lib/quiz.ts
+
 export type QuestionType =
-  | "mcq" | "gap-fill" | "order" | "token-select" | "match"
-  | "word-order" | "bank-fill" | "dropdown-fill"
-  | "hotspot"; // NEW
+  | "mcq"
+  | "gap-fill"
+  | "order"
+  | "token-select"
+  | "match"
+  | "word-order"
+  | "bank-fill"
+  | "dropdown-fill"
+  | "hotspot";
 
-// hotspot image + regions
-export type HotspotImage = {
-  src: string;
-  width: number;  // natural pixel width of the image
-  height: number; // natural pixel height
-  alt?: string;
-};
-
-export type HotspotRegion =
-  | { id: string; shape: "rect"; x: number; y: number; w: number; h: number; label?: string }
-  | { id: string; shape: "circle"; cx: number; cy: number; r: number; label?: string };
-
-// in QuizItem add:
-export interface QuizItem {
-  feedback: any;
-  points: number;
-  id: string;
-  type: QuestionType;
-
-  // NEW: image shown before or alongside the interaction
-  stimulus?: Media[]; // you already have Media
-  // NEW: hotspot-specific fields
-  hotspotImage?: HotspotImage;
-  regions?: HotspotRegion[];
-  selectMode?: "single" | "multi"; // for hotspot too
-}
-
-// Media type should be declared at the top level, not inside an interface
 export type Media =
   | { kind: "image" | "gif"; src: string; alt?: string; width?: number; height?: number }
   | { kind: "audio"; src: string; caption?: string }
@@ -40,7 +20,7 @@ export interface ItemFeedback {
   correct?: string;
   incorrect?: string;
   explanation?: string;
-  media?: Media[]; // shows after "Check" in the feedback panel
+  media?: Media[];
   perOption?: Record<string, { text?: string; media?: Media[] }>;
   perGap?: Record<number, { text?: string; media?: Media[] }>;
   premium?: boolean;
@@ -53,12 +33,24 @@ export interface Quiz {
   scoring?: { partialCredit?: boolean };
 }
 
+/** Hotspot support */
+export type HotspotImage = {
+  src: string;
+  width: number;
+  height: number;
+  alt?: string;
+};
+
+export type HotspotRegion =
+  | { id: string; shape: "rect"; x: number; y: number; w: number; h: number; label?: string }
+  | { id: string; shape: "circle"; cx: number; cy: number; r: number; label?: string };
+
 export interface QuizItem {
   id: string;
   type: QuestionType;
 
-  // Before-question media (optional)
-  stimulus?: Media[]; // shows BEFORE the interactive UI if present
+  /** Optional stimulus media shown BEFORE the interaction */
+  stimulus?: Media[];
 
   // MCQ
   prompt?: string;
@@ -74,22 +66,26 @@ export interface QuizItem {
   // Token-select
   text?: string;
   tokens?: { id: string; text: string }[];
-  selectMode?: "single" | "multi";
+  selectMode?: "single" | "multi"; // used for token-select and hotspot
 
   // Match (two-column)
   left?: { id: string; text: string }[];
   right?: { id: string; text: string }[];
 
-  // NEW: Word order (reorder tokens to form a sentence)
-  words?: { id: string; text: string }[]; // if omitted, we'll split `text`
+  // Word order (reorder tokens to form a sentence)
+  words?: { id: string; text: string }[];
 
-  // NEW: Bank fill (drag words into blanks in body using ___)
+  // Bank fill (drag words into blanks)
   bank?: { id: string; text: string }[];
 
-  // NEW: Dropdown fill (options per blank index)
+  // Dropdown fill (options per blank index)
   optionsByIndex?: Record<number, { id: string; text: string }[]>;
 
-  // Answers for all types
+  // Hotspot
+  hotspotImage?: HotspotImage;
+  regions?: HotspotRegion[];
+
+  // Answers
   answer:
     | { type: "mcq"; correctOptionIds: string[] }
     | { type: "gap"; acceptedByIndex: Record<number, string[]> }
@@ -99,6 +95,8 @@ export interface QuizItem {
     | { type: "word-order"; correctOrder: string[] }
     | { type: "bank"; correctTokenIdByIndex: Record<number, string[]> }
     | { type: "dropdown"; correctOptionIdByIndex: Record<number, string> }
-    | { type: "hotspot"; correctRegionIds: string[] }; // NEW
-}
+    | { type: "hotspot"; correctRegionIds: string[] };
 
+  points?: number;
+  feedback?: ItemFeedback;
+}

@@ -1,14 +1,17 @@
+// src/components/items.tsx
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { HotspotRegion, QuizItem } from "@/lib/quiz";
+import { QuizItem, HotspotRegion } from "@/lib/quiz";
 import s from "./OptionBars.module.css";
 
 /* ---------- MCQ (bars) ---------- */
 export function MCQ({
   item, value = [], onChange
 }: { item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
-  const multi = item.answer.type === "mcq" && item.answer.correctOptionIds.length > 1;
+  const multi =
+    item.answer.type === "mcq" &&
+    item.answer.correctOptionIds.length > 1;
 
   const toggle = (id: string) => {
     if (multi) {
@@ -54,7 +57,7 @@ export function MCQ({
   );
 }
 
-/* ---------- Gap fill ---------- */
+/* ---------- Gap fill (typed) ---------- */
 export function GapFill({
   item, value = [], onChange
 }: { item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
@@ -88,7 +91,7 @@ export function GapFill({
 export function Orderer({
   item, value = [], onChange
 }: { item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
-  const segs = item.segments ?? [];
+  const segs = useMemo(() => item.segments ?? [], [item.segments]);
 
   // Initialize once with the given order if empty
   useEffect(() => {
@@ -96,7 +99,7 @@ export function Orderer({
       onChange(segs.map(sg => sg.id));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [segs.length]);
 
   const current = useMemo(
     () => (value?.length ? value : segs.map(sg => sg.id)),
@@ -198,8 +201,7 @@ export function TokenSelect({
   );
 }
 
-/* ---------- MatchPairs (two-column matching) ---------- */
-/* ---------- MatchPairs (drag right → left) ---------- */
+/* ---------- MatchPairs (drag right → left with instant correctness) ---------- */
 export function MatchPairs({
   item, value = [], onChange
 }: { item: QuizItem; value?: string[]; onChange:(v:string[])=>void }) {
@@ -235,12 +237,11 @@ export function MatchPairs({
 
   const commitPair = (lid: string, rid: string) => {
     const key = `${lid}:${rid}`;
-    // instant correctness feedback
     const isCorrect = answerPairs.has(key);
     if (!isCorrect) {
       setWrongLeft(lid);
       setTimeout(() => setWrongLeft(null), 320);
-      return; // do not accept wrong pairs
+      return;
     }
     const next = new Map(pairs);
     // ensure R is unique
@@ -268,7 +269,6 @@ export function MatchPairs({
 
   return (
     <div className={s.columns}>
-      {/* LEFT (droppable slots) */}
       <div className={s.col}>
         {left.map((L) => {
           const matchedRight = pairs.get(L.id);
@@ -295,7 +295,6 @@ export function MatchPairs({
         })}
       </div>
 
-      {/* RIGHT (draggables) */}
       <div className={s.col}>
         {right.map((R) => {
           const taken = usedRight.has(R.id);
@@ -316,6 +315,7 @@ export function MatchPairs({
     </div>
   );
 }
+
 /* ---------- WordOrder (reorder chips to form a sentence) ---------- */
 export function WordOrder({
   item, value = [], onChange
@@ -324,13 +324,12 @@ export function WordOrder({
     ? item.words
     : (item.text ?? "").split(/\s+/).filter(Boolean).map((t,i)=>({id:String(i), text:t}));
 
-  // init once if empty
   useEffect(() => {
     if ((!value || value.length === 0) && base.length) {
       onChange(base.map(w => w.id));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [base.length]);
 
   const current = useMemo(() => (value?.length ? value : base.map(w => w.id)), [value, base]);
   const [drag, setDrag] = React.useState<string | null>(null);
@@ -364,7 +363,6 @@ export function WordOrder({
               onDragOver={(e)=> e.preventDefault()}
               onDrop={(e)=> onDropBefore(id, e)}
               onClick={()=>{
-                // tap fallback: move token forward
                 if (idx < current.length - 1) {
                   const next = [...current];
                   [next[idx], next[idx+1]] = [next[idx+1], next[idx]];
@@ -389,13 +387,6 @@ export function BankFill({
   const parts = (item.body ?? "").split("___");
   const blanks = parts.length - 1;
   const bank = item.bank ?? [];
-
-  // Remove token from wherever it is
-  const removeTokenEverywhere = (id: string) => {
-    const next = [...(value ?? [])];
-    for (let i=0;i<blanks;i++) if (next[i] === id) next[i] = "";
-    onChange(next);
-  };
 
   const dropTo = (i: number, id: string) => {
     const next = [...(value ?? new Array(blanks).fill(""))];
@@ -457,7 +448,6 @@ export function BankFill({
               draggable={!used}
               onDragStart={(e)=> { e.dataTransfer.setData("text/plain", b.id); }}
               onClick={()=> {
-                // click-to-place: put into first empty blank
                 const i = (value ?? []).findIndex(v => !v);
                 if (i >= 0 && !used) dropTo(i, b.id);
               }}
@@ -506,6 +496,7 @@ export function DropdownFill({
     </p>
   );
 }
+
 /* ---------- Hotspot (click regions on image) ---------- */
 export function Hotspot({
   item, value = [], onChange
@@ -516,7 +507,6 @@ export function Hotspot({
   const wrapRef = React.useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = React.useState(1);
 
-  // compute scale factor whenever the wrapper size changes
   React.useEffect(() => {
     const el = wrapRef.current;
     if (!el || !img) return;
@@ -562,30 +552,26 @@ export function Hotspot({
         />
       );
     }
-    // circle
-    if (r.shape === "circle") {
-      const d = r.r * 2 * scale;
-      const style: React.CSSProperties = {
-        position: "absolute",
-        left: (r.cx - r.r) * scale,
-        top: (r.cy - r.r) * scale,
-        width: d,
-        height: d,
-        borderRadius: "50%"
-      };
-      return (
-        <button
-          key={r.id}
-          type="button"
-          className={`${s.hotBtn} ${selected ? s.hotOn : ""}`}
-          style={style}
-          aria-pressed={selected}
-          aria-label={r.label ?? "region"}
-          onClick={() => toggle(r.id)}
-        />
-      );
-    }
-    return null;
+    const d = r.r * 2 * scale;
+    const style: React.CSSProperties = {
+      position: "absolute",
+      left: (r.cx - r.r) * scale,
+      top: (r.cy - r.r) * scale,
+      width: d,
+      height: d,
+      borderRadius: "50%"
+    };
+    return (
+      <button
+        key={r.id}
+        type="button"
+        className={`${s.hotBtn} ${selected ? s.hotOn : ""}`}
+        style={style}
+        aria-pressed={selected}
+        aria-label={r.label ?? "region"}
+        onClick={() => toggle(r.id)}
+      />
+    );
   };
 
   return (
@@ -601,7 +587,6 @@ export function Hotspot({
           alt={img?.alt ?? ""}
           className={s.hotImg}
           onLoad={() => {
-            // ensure scale applies after initial load
             const el = wrapRef.current;
             if (!el || !img) return;
             const w = el.clientWidth || img.width;
@@ -609,8 +594,9 @@ export function Hotspot({
           }}
         />
         {regions.map(renderRegion)}
-    </div>
+      </div>
     </div>
   );
 }
 
+export { }
