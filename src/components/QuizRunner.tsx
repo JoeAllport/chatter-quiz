@@ -123,20 +123,27 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       <div className={s.card}>
         {render(item)}
         <div className={s.controls}>
-          <button className={s.navBtn} onClick={() => setStep((n) => Math.max(0, n - 1))} disabled={step === 0}>
-            Back
-          </button>
-          <button className={s.checkBtn} onClick={onCheck} disabled={!answered}>
-            Check
-          </button>
-          <button
-            className={s.navBtn}
-            onClick={() => setStep((n) => Math.min(total - 1, n + 1))}
-            disabled={step >= total - 1}
-          >
-            Next
-          </button>
-        </div>
+  {step > 0 && (
+    <button className={s.navBtn} onClick={() => setStep((n) => Math.max(0, n - 1))}>
+      Back
+    </button>
+  )}
+
+  {!checked[item.id] ? (
+    <button className={s.checkBtn} onClick={onCheck} disabled={!answered}>
+      Check
+    </button>
+  ) : (
+    <button
+      className={s.nextBtn}
+      onClick={() => setStep((n) => Math.min(total - 1, n + 1))}
+      aria-label="Next question"
+    >
+      Next →
+    </button>
+  )}
+</div>
+
 
         {checked[item.id] ? (
           <FeedbackPanel
