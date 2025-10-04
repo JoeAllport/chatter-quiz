@@ -36,6 +36,19 @@
   --btn-muted-text: #0b1020;
   --btn-muted-border: rgba(34, 56, 130, 0.25);
 
+  /* option bars / selects / chips / blanks (light) */
+  --opt-bg: #ffffff;
+  --opt-border: rgba(34, 56, 130, 0.15);
+
+  --chip-bg: #eef3ff;
+  --chip-border: rgba(34, 56, 130, 0.20);
+
+  --select-bg: #ffffff;
+  --select-border: rgba(34, 56, 130, 0.20);
+
+  --blank-bg: #f1f5ff;
+  --blank-border: rgba(34, 56, 130, 0.30);
+
   color-scheme: light;
 }
 
@@ -68,6 +81,20 @@
   --btn-muted-bg: #1a2547;
   --btn-muted-text: #eaf0ff;
   --btn-muted-border: rgba(255, 255, 255, 0.14);
+
+    /* option bars / selects / chips / blanks (dark) */
+  --opt-bg: #101933;
+  --opt-border: rgba(255, 255, 255, 0.06);
+
+  --chip-bg: #172243;
+  --chip-border: rgba(255, 255, 255, 0.08);
+
+  --select-bg: #101933;
+  --select-border: rgba(255, 255, 255, 0.10);
+
+  --blank-bg: rgba(255, 255, 255, 0.04);
+  --blank-border: rgba(255, 255, 255, 0.18);
+
 
   color-scheme: dark;
 }
