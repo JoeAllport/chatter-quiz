@@ -1,144 +1,38 @@
-/* src/components/OptionBars.module.css */
-@layer base{
-  :root{
-    --brand-300:#7aa5ff;
-    --brand-400:#5a8cff;   /* hover accent */
-    --brand-600:#2e5bff;   /* selected/primary */
-    --brand-700:#2346c4;   /* drop-hover (darker) */
-    --ok:#21c18c;
-    --bad:#ff5a7a;
-    --ink:#eaf0ff;
-    --muted:#8fa1c9;
-    --panel:#101933;
-    --chip:#172243;
-  }
-}
-
-.prompt{ margin: 0 0 10px; color:var(--ink); }
+.prompt{ margin:0 0 10px; color:var(--text); }
 .multiNote{ margin-bottom:10px; color:var(--muted); font-size:14px; }
-
 .list{ display:flex; flex-direction:column; gap:10px; }
 
-.bar{
-  background:var(--panel);
-  color:var(--ink);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:12px;
-  padding:12px 14px;
-  text-align:left;
-  cursor:pointer;
-  transition: box-shadow .15s ease, transform .05s ease, border-color .15s ease, background .15s ease;
-}
-.bar:hover{
-  border-color: var(--brand-400);              /* lighter accent on hover */
-  box-shadow: 0 0 0 3px rgba(90,140,255,.25);
-}
-.bar:active{ transform: scale(.995); }
+.bar{ background:#101933; color:var(--text); border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:12px 14px; text-align:left; cursor:pointer; transition: box-shadow .15s, transform .05s, border-color .15s, background .15s; }
+.bar:hover{ border-color:var(--brand-400); box-shadow:0 0 0 3px rgba(90,140,255,.25); }
+.bar:active{ transform:scale(.995); }
+.selected{ background:rgba(46,91,255,.14); border-color:var(--brand-600); box-shadow:0 0 0 3px rgba(90,140,255,.20); }
 
-.selected{
-  background: rgba(46,91,255,.14);
-  border-color: var(--brand-600);
-  box-shadow: 0 0 0 3px rgba(90,140,255,.20);
-}
-
-/* Drag & drop states */
 .dragging{ opacity:.75; }
-.dropHover{
-  border-color: var(--brand-700) !important;   /* darker accent while hovering drop target */
-  box-shadow: 0 0 0 3px rgba(35,70,196,.26) !important;
-}
+.dropHover{ border-color:var(--brand-700)!important; box-shadow:0 0 0 3px rgba(35,70,196,.26)!important; }
 
-/* Correct / wrong badges */
-.correct{
-  border-color: rgba(33,193,140,.55) !important;
-  box-shadow: 0 0 0 3px rgba(33,193,140,.22) !important;
-}
-.badgeOk{
-  background: rgba(33,193,140,.15);
-  color:#b6ffe6;
-  border:1px solid rgba(33,193,140,.35);
-  padding:2px 6px;
-  border-radius:999px;
-  font-size:12px;
-}
+.correct{ border-color:rgba(33,193,140,.55)!important; box-shadow:0 0 0 3px rgba(33,193,140,.22)!important; }
+.badgeOk{ background:rgba(33,193,140,.15); color:#b6ffe6; border:1px solid rgba(33,193,140,.35); padding:2px 6px; border-radius:999px; font-size:12px; }
 
-.wrongFlash{
-  animation: wrong .3s ease;
-}
-@keyframes wrong{
-  0%{ box-shadow:0 0 0 0 rgba(255,90,122,.6); }
-  100%{ box-shadow:0 0 0 0 rgba(255,90,122,0); }
-}
+.token{ background:#172243; color:var(--text); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:4px 8px; margin-right:6px; cursor:pointer; transition: box-shadow .15s, border-color .15s, background .15s; }
+.token:hover{ border-color:var(--brand-400); box-shadow:0 0 0 2px rgba(90,140,255,.2); }
+.tokenOn{ background:rgba(46,91,255,.15); border-color:var(--brand-600); box-shadow:0 0 0 2px rgba(90,140,255,.2); }
 
-/* Token (clickable word) */
-.token{
-  background:var(--chip);
-  color:var(--ink);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:10px;
-  padding:4px 8px;
-  margin-right:6px;
-  cursor:pointer;
-  transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
-}
-.token:hover{
-  border-color: var(--brand-400);
-  box-shadow: 0 0 0 2px rgba(90,140,255,.2);
-}
-.tokenOn{
-  background: rgba(46,91,255,.15);
-  border-color: var(--brand-600);
-  box-shadow: 0 0 0 2px rgba(90,140,255,.2);
-}
-
-/* Split columns (match) */
 .columns{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .col{ display:flex; flex-direction:column; gap:10px; }
 .dim{ opacity:.45; }
 
-/* Small elements */
-.smallBtn{
-  background:transparent; color:var(--muted);
-  border:1px solid rgba(255,255,255,.08);
-  padding:4px 8px; border-radius:8px; cursor:pointer;
-}
+.smallBtn{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,.08); padding:4px 8px; border-radius:8px; cursor:pointer; }
 
-/* Word-bank + blanks */
 .bank{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-.chip{
-  background:var(--chip);
-  color:var(--ink);
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:10px; padding:6px 10px; cursor:pointer;
-}
-.blank{
-  display:inline-flex; align-items:center; justify-content:center;
-  min-width:100px; min-height:34px; margin:0 6px;
-  background:rgba(255,255,255,.04); border-radius:10px;
-  border:1px dashed rgba(255,255,255,.18);
-}
+.chip{ background:#172243; color:var(--text); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:6px 10px; cursor:pointer; }
+.blank{ display:inline-flex; align-items:center; justify-content:center; min-width:100px; min-height:34px; margin:0 6px; background:rgba(255,255,255,.04); border-radius:10px; border:1px dashed rgba(255,255,255,.18); }
 .placeholder{ color:var(--muted); font-size:14px; }
 
-.select{
-  background:var(--panel); color:var(--ink);
-  border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:6px 8px;
-}
+.select{ background:#101933; color:var(--text); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:6px 8px; }
 
-/* Hotspot */
 .hotWrap{ position:relative; width:100%; border-radius:12px; overflow:hidden; background:#090f1f; }
 .hotImg{ width:100%; height:auto; display:block; }
-.hotBtn{
-  position:absolute; border:2px solid rgba(255,255,255,.5);
-  background:rgba(46,91,255,.15); cursor:pointer; outline:none;
-  transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
-}
-.hotBtn:hover{
-  border-color:var(--brand-400);
-  box-shadow:0 0 0 3px rgba(90,140,255,.25);
-}
-.hotOn{
-  border-color:var(--brand-600);
-  background:rgba(46,91,255,.25);
-  box-shadow:0 0 0 3px rgba(90,140,255,.25);
-}
+.hotBtn{ position:absolute; border:2px solid rgba(255,255,255,.5); background:rgba(46,91,255,.15); cursor:pointer; outline:none; transition: box-shadow .15s, border-color .15s, background .15s; }
+.hotBtn:hover{ border-color:var(--brand-400); box-shadow:0 0 0 3px rgba(90,140,255,.25); }
+.hotOn{ border-color:var(--brand-600); background:rgba(46,91,255,.25); box-shadow:0 0 0 3px rgba(90,140,255,.25); }
 .dragHandle{ opacity:.4; margin-right:6px; user-select:none; }

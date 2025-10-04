@@ -1,0 +1,63 @@
+/* Design tokens for light & dark themes */
+
+:root,
+[data-theme="light"] {
+  /* surfaces & text */
+  --bg: #ffffff;
+  --card: #f7f9ff;
+  --text: #0b1020;
+  --muted: #5a6a8e;
+
+  /* brand blues */
+  --brand-300: #7aa5ff;
+  --brand-400: #5a8cff;  /* hover accent (lighter) */
+  --brand-600: #2e5bff;  /* selected/primary */
+  --brand-700: #2346c4;  /* drop-hover (darker) */
+
+  /* status */
+  --ok: #0f9d7a;
+  --bad: #e5484d;
+
+  /* shadows (rgba triplets) */
+  --ring-rgba: 90, 140, 255;
+  --ring-dark-rgba: 35, 70, 196;
+
+  /* feedback panel */
+  --fb-bg: #eef3ff;
+  --fb-border: rgba(34, 56, 130, 0.25);
+  --fb-text: #0b1020;
+  --fb-ok-bg: #e6f8f2;
+  --fb-ok-text: #055544;
+  --fb-bad-bg: #ffe8eb;
+  --fb-bad-text: #7e1021;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0b1020;
+  --card: #121a32;
+  --text: #eaf0ff;
+  --muted: #91a0c1;
+
+  --brand-300: #7aa5ff;
+  --brand-400: #5a8cff;  /* hover accent (lighter) */
+  --brand-600: #2e5bff;  /* selected/primary */
+  --brand-700: #2346c4;  /* drop-hover (darker) */
+
+  --ok: #21c18c;
+  --bad: #ff5a7a;
+
+  --ring-rgba: 90, 140, 255;
+  --ring-dark-rgba: 35, 70, 196;
+
+  --fb-bg: #0d152b;
+  --fb-border: rgba(255,255,255,.08);
+  --fb-text: #eaf0ff;
+  --fb-ok-bg: rgba(33,193,140,.10);
+  --fb-ok-text: #b6ffe6;
+  --fb-bad-bg: rgba(255,90,122,.12);
+  --fb-bad-text: #ffd0d8;
+
+  color-scheme: dark;
+}
