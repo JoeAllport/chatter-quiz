@@ -38,8 +38,14 @@ export default async function Page({
   const pref = (searchParams?.source as SourcePref) ?? "auto";
 
   // 1) Try Blob first (unless ?source=local)
-  let diag = { blobUrl: "", blobStatus: 0, blobErr: "", publicUrl: "", publicStatus: 0, publicErr: "" };
-  if (pref !== "local") {
+ const diag = {                       // ← was `let`, now `const`
+    blobUrl: "",
+    blobStatus: 0,
+    blobErr: "",
+    publicUrl: "",
+    publicStatus: 0,
+    publicErr: ""
+  };  if (pref !== "local") {
     const base = process.env.NEXT_PUBLIC_BLOB_BASE;
     if (base) {
       const url = `${base}/quizzes/${slug}.json`;
