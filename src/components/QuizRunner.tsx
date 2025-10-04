@@ -14,6 +14,7 @@ import {
   Hotspot,
 } from "./items";
 import { FeedbackPanel } from "./FeedbackPanel";
+import ResultsPanel from "./ResultsPanel"; // ← NEW
 
 export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const items: QuizItem[] = Array.isArray(quiz.items) ? quiz.items : [];
@@ -23,6 +24,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
   const [answers, setAnswers] = React.useState<Record<string, unknown>>({});
   const [checked, setChecked] = React.useState<Record<string, boolean>>({});
   const [last, setLast] = React.useState<{ itemId: string; correct: boolean } | null>(null);
+  const [showResults, setShowResults] = React.useState(false); // ← NEW
 
   const setVal = (id: string, v: unknown) => setAnswers((a) => ({ ...a, [id]: v }));
 
@@ -31,6 +33,25 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       <div className={s.wrapper}>
         <div className={s.title}>{quiz.title ?? "Untitled quiz"}</div>
         <p>No items to show. Make sure your JSON has an <code>items</code> array.</p>
+      </div>
+    );
+  }
+
+  const restart = () => {                 // ← NEW
+    setStep(0);
+    setAnswers({});
+    setChecked({});
+    setLast(null);
+    setShowResults(false);
+  };
+
+  if (showResults) {                       // ← NEW
+    return (
+      <div className={s.wrapper}>
+        <div className={s.title}>{quiz.title}</div>
+        <div className={s.card}>
+          <ResultsPanel quiz={quiz} answers={answers} onRestart={restart} />
+        </div>
       </div>
     );
   }
@@ -123,27 +144,30 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       <div className={s.card}>
         {render(item)}
         <div className={s.controls}>
-  {step > 0 && (
-    <button className={s.navBtn} onClick={() => setStep((n) => Math.max(0, n - 1))}>
-      Back
-    </button>
-  )}
+          {step > 0 && (
+            <button className={s.navBtn} onClick={() => setStep((n) => Math.max(0, n - 1))}>
+              Back
+            </button>
+          )}
 
-  {!checked[item.id] ? (
-    <button className={s.checkBtn} onClick={onCheck} disabled={!answered}>
-      Check
-    </button>
-  ) : (
-    <button
-      className={s.nextBtn}
-      onClick={() => setStep((n) => Math.min(total - 1, n + 1))}
-      aria-label="Next question"
-    >
-      Next →
-    </button>
-  )}
-</div>
-
+          {!checked[item.id] ? (
+            <button className={s.checkBtn} onClick={onCheck} disabled={!answered}>
+              Check
+            </button>
+          ) : step < total - 1 ? (
+            <button
+              className={s.nextBtn}
+              onClick={() => setStep((n) => Math.min(total - 1, n + 1))}
+              aria-label="Next question"
+            >
+              Next →
+            </button>
+          ) : (
+            <button className={s.nextBtn} onClick={() => setShowResults(true)}>
+              See results →
+            </button>
+          )}
+        </div>
 
         {checked[item.id] ? (
           <FeedbackPanel
