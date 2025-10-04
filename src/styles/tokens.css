@@ -31,6 +31,11 @@
   --fb-bad-bg: #ffe8eb;
   --fb-bad-text: #7e1021;
 
+  /* buttons (muted/secondary) */
+  --btn-muted-bg: #e9efff;
+  --btn-muted-text: #0b1020;
+  --btn-muted-border: rgba(34, 56, 130, 0.25);
+
   color-scheme: light;
 }
 
@@ -58,6 +63,11 @@
   --fb-ok-text: #b6ffe6;
   --fb-bad-bg: rgba(255,90,122,.12);
   --fb-bad-text: #ffd0d8;
+
+  /* buttons (muted/secondary) */
+  --btn-muted-bg: #1a2547;
+  --btn-muted-text: #eaf0ff;
+  --btn-muted-border: rgba(255, 255, 255, 0.14);
 
   color-scheme: dark;
 }

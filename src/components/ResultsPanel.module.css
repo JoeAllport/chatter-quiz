@@ -22,8 +22,12 @@
   transition: transform .06s, box-shadow .15s, opacity .2s; }
 .primary { background: var(--brand-600); color:#fff; box-shadow:0 6px 18px rgba(var(--ring-rgba), .35); }
 .primary:hover { box-shadow:0 8px 22px rgba(var(--ring-rgba), .45); transform:translateY(-1px); }
-.ghost { background:#1a2547; color:var(--text); }
-.ghost:hover { transform:translateY(-1px); }
+.ghost{
+  background: var(--btn-muted-bg);
+  color: var(--btn-muted-text);
+  border: 1px solid var(--btn-muted-border);
+}
+.ghost:hover{ transform: translateY(-1px); box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18); }
 
 .form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .input { background:#101933; color:var(--text);

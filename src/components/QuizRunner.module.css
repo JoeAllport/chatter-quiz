@@ -3,9 +3,16 @@
 .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:20px; box-shadow:0 8px 28px rgba(0,0,0,.35); }
 .controls{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
 
-.navBtn,.checkBtn,.nextBtn{ appearance:none; border:none; border-radius:12px; padding:10px 16px; font-weight:600; cursor:pointer; transition:transform .06s, box-shadow .15s, opacity .2s; }
-.navBtn{ background:#1a2547; color:var(--text); }
-.navBtn:disabled{ opacity:.45; cursor:not-allowed; }
+.navBtn{
+  background: var(--btn-muted-bg);
+  color: var(--btn-muted-text);
+  border: 1px solid var(--btn-muted-border);
+}
+.navBtn:hover{
+  box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18);
+  transform: translateY(-1px);
+}
+
 
 .checkBtn{ background:var(--brand-600); color:white; box-shadow:0 6px 18px rgba(var(--ring-rgba), .35); }
 .checkBtn:hover{ box-shadow:0 8px 22px rgba(var(--ring-rgba), .45); transform:translateY(-1px); }
