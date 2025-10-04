@@ -50,13 +50,17 @@ export default async function QuizPage({
   }
 
   if (!quiz) {
-    return (
-      <div style={{ padding: 24 }}>
-        Quiz “{slug}” not found. Make sure you committed{" "}
-        <code>public/quizzes/{slug}.json</code> or uploaded it to Blob.
-      </div>
-    );
-  }
-
-  return <QuizRunner quiz={quiz} />;
+  const base = process.env.NEXT_PUBLIC_BLOB_BASE;
+  return (
+    <div style={{ padding: 24, lineHeight: 1.6 }}>
+      <h2>Quiz “{slug}” not found</h2>
+      <p>Looked for:</p>
+      <ul>
+        <li>Blob: {base ? `${base}/quizzes/${slug}.json` : "(NEXT_PUBLIC_BLOB_BASE not set)"}</li>
+        <li>Public: /quizzes/{slug}.json</li>
+      </ul>
+      <p>Tip: remove <code>?source=local</code> if present, and ensure the Blob file path is <code>quizzes/{slug}.json</code>.</p>
+    </div>
+  );
+}
 }
