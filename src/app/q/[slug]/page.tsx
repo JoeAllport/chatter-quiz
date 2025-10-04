@@ -2,8 +2,8 @@ import QuizRunner from "@/components/QuizRunner";
 import type { Quiz } from "@/lib/quiz";
 import { headers } from "next/headers";
 
-export const dynamic = "force-dynamic";   // never pre-render
-export const revalidate = 0;              // no cache for this route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type SourcePref = "auto" | "blob" | "local";
 
@@ -14,128 +14,95 @@ async function getOrigin() {
   return host ? `${proto}://${host}` : "";
 }
 
-async function tryFetchJson(url: string): Promise<
-  | { ok: true; data: Quiz }
-  | { ok: false; status?: number; err?: string; contentType?: string; sample?: string }
-> {
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    const ct = res.headers.get("content-type") ?? "";
-    const text = await res.text(); // read once so we can show a sample if JSON fails
+async function fetchJson(url: string) {
+  const res = await fetch(url, { cache: "no-store" });
+  const text = await res.text();
+  return { ok: res.ok, status: res.status, ct: res.headers.get("content-type") ?? "", text };
+}
 
-    if (!res.ok) {
-      return { ok: false, status: res.status, contentType: ct, sample: text.slice(0, 200) };
-    }
-    try {
-      const data = JSON.parse(text) as Quiz;
-      return { ok: true, data };
-    } catch (e) {
-      return {
-        ok: false,
-        status: res.status,
-        contentType: ct,
-        err: (e as Error).message || "JSON parse error",
-        sample: text.slice(0, 200),
-      };
-    }
-  } catch (e) {
-    return { ok: false, err: (e as Error).message || "Network error" };
+function validateQuizShape(q: unknown): { ok: true; data: Quiz } | { ok: false; reason: string } {
+  if (!q || typeof q !== "object") return { ok: false, reason: "Root is not an object" };
+  const obj = q as Record<string, unknown>;
+  const items = obj.items as unknown;
+  if (!Array.isArray(items)) {
+    const keys = Object.keys(obj).join(", ");
+    return { ok: false, reason: `Missing "items" array. Top-level keys: [${keys}]` };
   }
+  return { ok: true, data: q as Quiz };
 }
 
 export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: { slug: string };
-  searchParams?: { source?: SourcePref };
-}) {
+  params, searchParams,
+}: { params: { slug: string }, searchParams?: { source?: SourcePref } }) {
   const slug = params.slug;
-  const pref: SourcePref = (searchParams?.source as SourcePref) ?? "auto";
+  const pref = (searchParams?.source as SourcePref) ?? "auto";
 
-  const diag: {
-    blobUrl?: string;
-    blobStatus?: number;
-    blobErr?: string;
-    blobCT?: string;
-    blobSample?: string;
-    publicUrl?: string;
-    publicStatus?: number;
-    publicErr?: string;
-    publicCT?: string;
-    publicSample?: string;
-  } = {};
-
-  // 1) Blob first (unless forced local)
+  // 1) Try Blob first (unless ?source=local)
+  let diag = { blobUrl: "", blobStatus: 0, blobErr: "", publicUrl: "", publicStatus: 0, publicErr: "" };
   if (pref !== "local") {
     const base = process.env.NEXT_PUBLIC_BLOB_BASE;
     if (base) {
       const url = `${base}/quizzes/${slug}.json`;
       diag.blobUrl = url;
-      const r = await tryFetchJson(url);
-      if (r.ok) {
-        return <QuizRunner quiz={r.data} />;
-      } else {
+      try {
+        const r = await fetchJson(url);
         diag.blobStatus = r.status;
-        diag.blobErr = r.err;
-        diag.blobCT = r.contentType;
-        diag.blobSample = r.sample;
+        if (r.ok) {
+          try {
+            const parsed = JSON.parse(r.text);
+            const v = validateQuizShape(parsed);
+            if (v.ok) return <QuizRunner quiz={v.data} />;
+            diag.blobErr = v.reason;
+          } catch (e) {
+            diag.blobErr = (e as Error).message || "JSON parse error";
+          }
+        } else {
+          diag.blobErr = `HTTP ${r.status}`;
+        }
+      } catch (e) {
+        diag.blobErr = (e as Error).message || "Network error";
       }
     }
   }
 
   // 2) Fallback to /public
   const origin = await getOrigin();
-  const publicUrl = origin ? `${origin}/quizzes/${slug}.json` : `/quizzes/${slug}.json`;
-  diag.publicUrl = publicUrl;
-  const pr = await tryFetchJson(publicUrl);
-  if (pr.ok) {
-    return <QuizRunner quiz={pr.data} />;
-  } else {
-    diag.publicStatus = pr.status;
-    diag.publicErr = pr.err;
-    diag.publicCT = pr.contentType;
-    diag.publicSample = pr.sample;
+  const pub = origin ? `${origin}/quizzes/${slug}.json` : `/quizzes/${slug}.json`;
+  diag.publicUrl = pub;
+  try {
+    const r = await fetchJson(pub);
+    diag.publicStatus = r.status;
+    if (r.ok) {
+      try {
+        const parsed = JSON.parse(r.text);
+        const v = validateQuizShape(parsed);
+        if (v.ok) return <QuizRunner quiz={v.data} />;
+        diag.publicErr = v.reason;
+      } catch (e) {
+        diag.publicErr = (e as Error).message || "JSON parse error";
+      }
+    } else {
+      diag.publicErr = `HTTP ${r.status}`;
+    }
+  } catch (e) {
+    diag.publicErr = (e as Error).message || "Network error";
   }
 
-  // 3) Diagnostics UI
+  // 3) Diagnostics
   return (
-    <div style={{ padding: 24, lineHeight: 1.7, maxWidth: 900, fontFamily: "system-ui, Arial, sans-serif" }}>
+    <div style={{ padding: 24, lineHeight: 1.7, maxWidth: 900 }}>
       <h2>Quiz “{slug}” not found</h2>
-      <p>Looked for:</p>
       <ul>
         <li>
-          <div><strong>Blob:</strong> {diag.blobUrl ?? "(NEXT_PUBLIC_BLOB_BASE not set)"}</div>
-          <small>
-            {diag.blobStatus ? `Status ${diag.blobStatus} • ` : ""}
-            {diag.blobCT ? `${diag.blobCT} • ` : ""}
-            {diag.blobErr ?? "—"}
-          </small>
-          {diag.blobSample ? (
-            <pre style={{ whiteSpace: "pre-wrap", background: "#f6f7fb", padding: 10, borderRadius: 8 }}>
-              {diag.blobSample}
-            </pre>
-          ) : null}
+          <div><strong>Blob:</strong> {diag.blobUrl || "(NEXT_PUBLIC_BLOB_BASE not set)"} </div>
+          <small>{diag.blobErr || "—"}</small>
         </li>
         <li>
           <div><strong>Public:</strong> {diag.publicUrl}</div>
-          <small>
-            {diag.publicStatus ? `Status ${diag.publicStatus} • ` : ""}
-            {diag.publicCT ? `${diag.publicCT} • ` : ""}
-            {diag.publicErr ?? "—"}
-          </small>
-          {diag.publicSample ? (
-            <pre style={{ whiteSpace: "pre-wrap", background: "#f6f7fb", padding: 10, borderRadius: 8 }}>
-              {diag.publicSample}
-            </pre>
-          ) : null}
+          <small>{diag.publicErr || "—"}</small>
         </li>
       </ul>
-      <p>
-        Tip: Ensure the Blob object path is <code>quizzes/{slug}.json</code> (lowercase). Visit this page as{" "}
-        <code>/q/{slug}</code> (no <code>?source=local</code>). If Blob works directly in the browser but fails here,
-        the JSON may have trailing commas or other invalid syntax.
-      </p>
+      <p>Ensure your Blob object path is <code>quizzes/{slug}.json</code> and the JSON has an <code>items</code> array.</p>
     </div>
   );
 }
