@@ -15,11 +15,14 @@ export default function ThemeProvider() {
 
     const apply = (mode: Mode) => {
       const el = document.documentElement;
-      const resolved =
+      const resolved: Exclude<Mode, "system"> =
         mode === "system" ? (prefers.matches ? "dark" : "light") : mode;
+
+      // set data-theme attribute
       el.setAttribute("data-theme", resolved);
-      // helps native controls (inputs) pick correct palette
-      (el.style as any).colorScheme = resolved;
+
+      // set CSS color-scheme without using `any`
+      el.style.setProperty("color-scheme", resolved);
     };
 
     const mode: Mode = fromUrl ?? saved ?? "system";
