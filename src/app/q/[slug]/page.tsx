@@ -1,114 +1,76 @@
 import QuizRunner from "@/components/QuizRunner";
-import type { Quiz } from "@/lib/quiz";
+import type { Quiz, QuizItem } from "@/lib/quiz";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type SourcePref = "auto" | "blob" | "local";
+type SourcePref = "auto" | "blob" | "local"; // kept for compatibility, but "local" is ignored
 
-async function getOrigin() {
-  const h = await headers();
-  const proto = h.get("x-forwarded-proto") ?? "https";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  return host ? `${proto}://${host}` : "";
+function getBlobBase() {
+  const base = process.env.NEXT_PUBLIC_BLOB_BASE;
+  if (!base) throw new Error("NEXT_PUBLIC_BLOB_BASE is not set on this deployment.");
+  return base.replace(/\/+$/, "");
 }
 
-async function fetchJson(url: string) {
+async function fetchText(url: string) {
   const res = await fetch(url, { cache: "no-store" });
   const text = await res.text();
   return { ok: res.ok, status: res.status, ct: res.headers.get("content-type") ?? "", text };
 }
 
-function validateQuizShape(q: unknown): { ok: true; data: Quiz } | { ok: false; reason: string } {
-  if (!q || typeof q !== "object") return { ok: false, reason: "Root is not an object" };
-  const obj = q as Record<string, unknown>;
-  const items = obj.items as unknown;
-  if (!Array.isArray(items)) {
+function coerceAndValidate(parsed: unknown, slug: string):
+  | { ok: true; data: Quiz }
+  | { ok: false; reason: string } {
+  // standard form: object with items[]
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const obj = parsed as Record<string, unknown>;
+    if (Array.isArray(obj.items)) return { ok: true, data: parsed as Quiz };
     const keys = Object.keys(obj).join(", ");
     return { ok: false, reason: `Missing "items" array. Top-level keys: [${keys}]` };
   }
-  return { ok: true, data: q as Quiz };
+  // reject arrays to enforce standard
+  return { ok: false, reason: "Root must be an object with an `items` array (not a top-level array)." };
 }
 
 export default async function Page({
-  params, searchParams,
-}: { params: { slug: string }, searchParams?: { source?: SourcePref } }) {
+  params,
+}: { params: { slug: string }; searchParams?: { source?: SourcePref } }) {
   const slug = params.slug;
-  const pref = (searchParams?.source as SourcePref) ?? "auto";
+  const base = getBlobBase();
+  const url = `${base}/quizzes/${slug}.json`;
 
-  // 1) Try Blob first (unless ?source=local)
- const diag = {                       // ← was `let`, now `const`
-    blobUrl: "",
-    blobStatus: 0,
-    blobErr: "",
-    publicUrl: "",
-    publicStatus: 0,
-    publicErr: ""
-  };  if (pref !== "local") {
-    const base = process.env.NEXT_PUBLIC_BLOB_BASE;
-    if (base) {
-      const url = `${base}/quizzes/${slug}.json`;
-      diag.blobUrl = url;
-      try {
-        const r = await fetchJson(url);
-        diag.blobStatus = r.status;
-        if (r.ok) {
-          try {
-            const parsed = JSON.parse(r.text);
-            const v = validateQuizShape(parsed);
-            if (v.ok) return <QuizRunner quiz={v.data} />;
-            diag.blobErr = v.reason;
-          } catch (e) {
-            diag.blobErr = (e as Error).message || "JSON parse error";
-          }
-        } else {
-          diag.blobErr = `HTTP ${r.status}`;
-        }
-      } catch (e) {
-        diag.blobErr = (e as Error).message || "Network error";
-      }
+  const r = await fetchText(url);
+  if (r.ok) {
+    try {
+      const parsed = JSON.parse(r.text);
+      const v = coerceAndValidate(parsed, slug);
+      if (v.ok) return <QuizRunner quiz={v.data} />;
+      return diag(`Quiz “${slug}” invalid`, [
+        `Blob: ${url}`,
+        v.reason,
+      ]);
+    } catch (e) {
+      return diag(`Quiz “${slug}” invalid JSON`, [
+        `Blob: ${url}`,
+        (e as Error).message,
+        `Sample: ${r.text.slice(0, 200)}…`,
+      ]);
     }
   }
+  return diag(`Quiz “${slug}” not found`, [
+    `Blob: ${url}`,
+    `HTTP ${r.status} • ${r.ct}`,
+    `Sample: ${r.text.slice(0, 200)}…`,
+  ]);
+}
 
-  // 2) Fallback to /public
-  const origin = await getOrigin();
-  const pub = origin ? `${origin}/quizzes/${slug}.json` : `/quizzes/${slug}.json`;
-  diag.publicUrl = pub;
-  try {
-    const r = await fetchJson(pub);
-    diag.publicStatus = r.status;
-    if (r.ok) {
-      try {
-        const parsed = JSON.parse(r.text);
-        const v = validateQuizShape(parsed);
-        if (v.ok) return <QuizRunner quiz={v.data} />;
-        diag.publicErr = v.reason;
-      } catch (e) {
-        diag.publicErr = (e as Error).message || "JSON parse error";
-      }
-    } else {
-      diag.publicErr = `HTTP ${r.status}`;
-    }
-  } catch (e) {
-    diag.publicErr = (e as Error).message || "Network error";
-  }
-
-  // 3) Diagnostics
+function diag(title: string, lines: string[]) {
   return (
     <div style={{ padding: 24, lineHeight: 1.7, maxWidth: 900 }}>
-      <h2>Quiz “{slug}” not found</h2>
-      <ul>
-        <li>
-          <div><strong>Blob:</strong> {diag.blobUrl || "(NEXT_PUBLIC_BLOB_BASE not set)"} </div>
-          <small>{diag.blobErr || "—"}</small>
-        </li>
-        <li>
-          <div><strong>Public:</strong> {diag.publicUrl}</div>
-          <small>{diag.publicErr || "—"}</small>
-        </li>
-      </ul>
-      <p>Ensure your Blob object path is <code>quizzes/{slug}.json</code> and the JSON has an <code>items</code> array.</p>
+      <h2>{title}</h2>
+      <ul>{lines.map((l, i) => <li key={i}><code>{l}</code></li>)}</ul>
+      <p>Ensure the Blob object path is <code>quizzes/&lt;slug&gt;.json</code> and the JSON has an <code>items</code> array.</p>
     </div>
   );
 }
