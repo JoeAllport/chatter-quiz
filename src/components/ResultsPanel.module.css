@@ -30,8 +30,14 @@
 .ghost:hover{ transform: translateY(-1px); box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18); }
 
 .form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.input { background:#101933; color:var(--text);
-  border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 12px; min-width:260px; }
+.input{
+  background: var(--select-bg);
+  color: var(--text);
+  border: 1px solid var(--select-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-width: 260px;
+}
 .help { color:var(--muted); font-size:12px; }
 .success { color: var(--ok); font-weight:600; }
 .error { color: var(--bad); font-weight:600; }

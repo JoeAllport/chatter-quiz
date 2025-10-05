@@ -28,6 +28,23 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
 
   const setVal = (id: string, v: unknown) => setAnswers((a) => ({ ...a, [id]: v }));
 
+  function promptFor(item: QuizItem) {
+  if (item.prompt && item.prompt.trim()) return item.prompt;
+  switch (item.type) {
+    case "mcq": return "Choose the correct answer.";
+    case "gap-fill": return "Complete the sentence.";
+    case "order": return "Arrange the parts in the correct order.";
+    case "word-order": return "Order the words to make a correct sentence.";
+    case "token-select": return "Tap the word(s) that are incorrect.";
+    case "match": return "Match the items in the two columns.";
+    case "bank-fill": return "Drag words into the blanks.";
+    case "dropdown-fill": return "Select the best option for each blank.";
+    case "hotspot": return "Tap the correct area on the image.";
+    default: return "Answer this question.";
+  }
+}
+
+
   if (total === 0) {
     return (
       <div className={s.wrapper}>
@@ -142,6 +159,7 @@ export default function QuizRunner({ quiz }: { quiz: Quiz }) {
       <div className={s.title}>{quiz.title}</div>
 
       <div className={s.card}>
+        <div className={s.qprompt}>{promptFor(item)}</div>
         {render(item)}
         <div className={s.controls}>
           {step > 0 && (
