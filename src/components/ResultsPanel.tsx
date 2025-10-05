@@ -2,6 +2,7 @@
 import React from "react";
 import s from "./ResultsPanel.module.css";
 import type { Quiz, QuizItem } from "@/lib/quiz";
+import EmailModal from "./EmailModal";
 
 type ScoreLine = { id: string; correct: boolean; points: number; earned: number };
 
@@ -88,6 +89,29 @@ export default function ResultsPanel({
   const [email, setEmail] = React.useState("");
   const [state, setState] = React.useState<"idle" | "saving" | "ok" | "err">("idle");
   const [msg, setMsg] = React.useState("");
+  const [openModal, setOpenModal] = React.useState(false);
+
+  <form className={s.form} onSubmit={(e) => { e.preventDefault(); subscribe(); }}>
+  <input
+    className={s.input}
+    type="email"
+    placeholder="Your email for weekly review"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    required
+  />
+  <button
+    type="button"
+    className={`${s.btn} ${s.primary}`}
+    onClick={() => setOpenModal(true)}
+  >
+    Get weekly review
+  </button>
+  {state === "ok" && <div className={s.success}>{msg}</div>}
+  {state === "err" && <div className={s.error}>{msg}</div>}
+  <div className={s.help}>Press Enter to submit here, or use the pop-up.</div>
+</form>
+
 
   async function subscribe() {
     setState("saving"); setMsg("");
@@ -153,4 +177,13 @@ export default function ResultsPanel({
       </div>
     </div>
   );
+  <EmailModal
+  open={openModal}
+  defaultEmail={email}
+  quizId={quiz.id}
+  earned={earned}
+  total={total}
+  answers={answers}
+  onClose={() => setOpenModal(false)}
+/>
 }

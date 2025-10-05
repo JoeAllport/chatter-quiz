@@ -12,7 +12,11 @@
 .subtle { color:var(--muted); }
 
 .table { width:100%; border-collapse:separate; border-spacing:0 8px; margin-top:10px; }
-.row { background:#101933; border:1px solid rgba(255,255,255,.06); border-radius:10px; }
+.row{
+  background: var(--opt-bg);
+  border: 1px solid var(--opt-border);
+  border-radius: 10px;
+}
 .cell { padding:10px 12px; }
 .ok { color: var(--ok); font-weight:700; }
 .bad { color: var(--bad); font-weight:700; }
@@ -22,12 +26,17 @@
   transition: transform .06s, box-shadow .15s, opacity .2s; }
 .primary { background: var(--brand-600); color:#fff; box-shadow:0 6px 18px rgba(var(--ring-rgba), .35); }
 .primary:hover { box-shadow:0 8px 22px rgba(var(--ring-rgba), .45); transform:translateY(-1px); }
+
 .ghost{
   background: var(--btn-muted-bg);
   color: var(--btn-muted-text);
   border: 1px solid var(--btn-muted-border);
 }
-.ghost:hover{ transform: translateY(-1px); box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18); }
+.ghost:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18);
+}
+
 
 .form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 .input{

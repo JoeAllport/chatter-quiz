@@ -14,11 +14,21 @@
   background: var(--btn-muted-bg);
   color: var(--btn-muted-text);
   border: 1px solid var(--btn-muted-border);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .15s ease, opacity .2s;
 }
 .navBtn:hover{
   box-shadow: 0 4px 14px rgba(var(--ring-rgba), .18);
   transform: translateY(-1px);
 }
+.navBtn:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--ring-rgba), .28);
+}
+
 
 
 .checkBtn, .nextBtn{
