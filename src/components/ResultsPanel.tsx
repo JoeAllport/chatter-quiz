@@ -2,7 +2,6 @@
 import React from "react";
 import s from "./ResultsPanel.module.css";
 import type { Quiz, QuizItem } from "@/lib/quiz";
-import EmailModal from "./EmailModal";
 
 type ScoreLine = { id: string; correct: boolean; points: number; earned: number };
 
@@ -28,7 +27,10 @@ function scoreItem(it: QuizItem, given: string[] | undefined): ScoreLine {
     const ids = (it.answer as { correctOptionIds?: string[] }).correctOptionIds ?? [];
     correct = eqSet(v, ids);
   } else if (it.type === "gap-fill") {
-    const byIndex = (it.answer as { acceptedByIndex?: Record<number, string[]> }).acceptedByIndex ?? {};
+    const byIndex =
+      "acceptedByIndex" in it.answer && it.answer.acceptedByIndex
+        ? it.answer.acceptedByIndex
+        : {};
     correct = v.every((val, i) => {
       const bucket = byIndex[i];
       if (!Array.isArray(bucket)) return false;
@@ -36,29 +38,54 @@ function scoreItem(it: QuizItem, given: string[] | undefined): ScoreLine {
       return bucket.some((s) => String(s).toLowerCase().trim() === norm);
     });
   } else if (it.type === "order") {
-    const ids = (it.answer as { correctOrder?: string[] }).correctOrder ?? [];
+    const ids =
+      "correctOrder" in it.answer && Array.isArray(it.answer.correctOrder)
+        ? it.answer.correctOrder
+        : [];
     correct = eqSeq(v, ids);
   } else if (it.type === "token-select") {
-    const ids = (it.answer as { correctTokenIds?: string[] }).correctTokenIds ?? [];
+    const ids =
+      "correctTokenIds" in it.answer && Array.isArray(it.answer.correctTokenIds)
+        ? it.answer.correctTokenIds
+        : [];
     correct = eqSet(v, ids);
   } else if (it.type === "match") {
-    const pairs = (it.answer as { pairs?: [string, string][] }).pairs ?? [];
+    const pairs = Array.isArray((it.answer as { pairs?: [string, string][] }).pairs)
+      ? (it.answer as { pairs: [string, string][] }).pairs
+      : [];
     const expected = pairs.map(([l, r]) => `${l}::${r}`);
     correct = eqSet(v.map(String), expected);
   } else if (it.type === "word-order") {
-    const ids = (it.answer as { correctOrder?: string[] }).correctOrder ?? [];
+    const ids =
+      "correctOrder" in it.answer && Array.isArray(it.answer.correctOrder)
+        ? it.answer.correctOrder
+        : [];
     correct = eqSeq(v, ids);
   } else if (it.type === "bank-fill") {
-    const byIndex = (it.answer as { correctTokenIdByIndex?: Record<number, string | string[]> }).correctTokenIdByIndex ?? {};
+    let byIndex: Record<number, string[] | string> = {};
+    if (
+      it.answer &&
+      typeof it.answer === "object" &&
+      "correctTokenIdByIndex" in it.answer &&
+      it.answer.correctTokenIdByIndex
+    ) {
+      byIndex = it.answer.correctTokenIdByIndex as Record<number, string[] | string>;
+    }
     correct = v.every((val, i) => {
       const bucket = byIndex[i];
       return Array.isArray(bucket) ? bucket.includes(String(val)) : String(val) === String(bucket);
     });
   } else if (it.type === "dropdown-fill") {
-    const byIndex = (it.answer as { correctOptionIdByIndex?: Record<number, string> }).correctOptionIdByIndex ?? {};
+    const byIndex =
+      typeof it.answer === "object" && "correctOptionIdByIndex" in it.answer
+        ? (it.answer as { correctOptionIdByIndex?: Record<number, string> }).correctOptionIdByIndex ?? {}
+        : {};
     correct = v.every((val, i) => String(val) === String(byIndex[i]));
   } else if (it.type === "hotspot") {
-    const ids = (it.answer as { correctRegionIds?: string[] }).correctRegionIds ?? [];
+    const ids =
+      typeof it.answer === "object" && "correctRegionIds" in it.answer && Array.isArray((it.answer as { correctRegionIds?: string[] }).correctRegionIds)
+        ? (it.answer as { correctRegionIds?: string[] }).correctRegionIds ?? []
+        : [];
     correct = eqSet(v, ids);
   }
 
@@ -86,32 +113,26 @@ export default function ResultsPanel({
   const { total, earned, lines } = React.useMemo(() => scoreQuiz(quiz, answers), [quiz, answers]);
   const pct = Math.round((earned / Math.max(1, total)) * 100);
 
+  // Staggered reveal for tiles (0.75s per tile), then reveal score
+  const stepMs = 750;
+  const [revealDone, setRevealDone] = React.useState(false);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      setRevealDone(true);
+      if (typeof navigator !== "undefined" && "vibrate" in navigator && pct >= 80) {
+        // small celebratory vibration pattern on capable devices
+        (navigator as unknown as { vibrate: (pattern: number | number[]) => void })
+          .vibrate([35, 70, 35]);
+      }
+    }, lines.length * stepMs + 250);
+    return () => clearTimeout(t);
+  }, [lines.length, stepMs, pct]);
+
+  // Email subscribe (prominent inline)
   const [email, setEmail] = React.useState("");
   const [state, setState] = React.useState<"idle" | "saving" | "ok" | "err">("idle");
   const [msg, setMsg] = React.useState("");
-  const [openModal, setOpenModal] = React.useState(false);
-
-  <form className={s.form} onSubmit={(e) => { e.preventDefault(); subscribe(); }}>
-  <input
-    className={s.input}
-    type="email"
-    placeholder="Your email for weekly review"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    required
-  />
-  <button
-    type="button"
-    className={`${s.btn} ${s.primary}`}
-    onClick={() => setOpenModal(true)}
-  >
-    Get weekly review
-  </button>
-  {state === "ok" && <div className={s.success}>{msg}</div>}
-  {state === "err" && <div className={s.error}>{msg}</div>}
-  <div className={s.help}>Press Enter to submit here, or use the pop-up.</div>
-</form>
-
 
   async function subscribe() {
     setState("saving"); setMsg("");
@@ -124,11 +145,15 @@ export default function ResultsPanel({
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setState("ok"); setMsg("Thanks! You’re on the list for weekly reviews.");
+      setState("ok"); setMsg("Nice! You’ll get your weekly review 🎉");
     } catch (e) {
       setState("err"); setMsg(e instanceof Error ? e.message : "Something went wrong.");
     }
   }
+
+  // Optional celebration image from quiz meta
+  const meta = (quiz as unknown as { meta?: { celebrationImage?: string } }).meta ?? {};
+  const celebImg = meta.celebrationImage;
 
   return (
     <div className={s.wrap}>
@@ -137,53 +162,59 @@ export default function ResultsPanel({
         <div className={s.meta}>{quiz.title}</div>
       </div>
 
-      <div className={s.score}>
-        <div className={s.badge}>{earned} / {total}</div>
-        <div className={s.subtle}>{pct}%</div>
+      {/* Celebration */}
+      <div className={s.celebrate}>
+        {celebImg ? (
+          <img src={celebImg} alt="Celebration" />
+        ) : (
+          <span className={s.emoji} aria-hidden>🎆</span>
+        )}
+        <div className={s.praise}>
+          {pct >= 90 ? "Phenomenal!" : pct >= 75 ? "Great job!" : pct >= 50 ? "Nice work!" : "Good effort — keep going!"}
+        </div>
       </div>
 
-      <table className={s.table}>
-        <tbody>
-          {lines.map((l, i) => (
-            <tr className={s.row} key={l.id}>
-              <td className={s.cell}>Q{i + 1}</td>
-              <td className={s.cell}>{l.id}</td>
-              <td className={s.cell}>{l.points} pt</td>
-              <td className={s.cell}>{l.correct ? <span className={s.ok}>Correct</span> : <span className={s.bad}>Incorrect</span>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Animated tiles */}
+      <div className={s.tiles} role="list" aria-label="Question results">
+        {lines.map((l, i) => (
+          <div
+            role="listitem"
+            key={l.id}
+            className={`${s.tile} ${l.correct ? s.ok : s.bad}`}
+            style={{ animationDelay: `${i * (stepMs / 1000)}s` }}
+            aria-label={`Q${i + 1} ${l.correct ? "correct" : "incorrect"}`}
+          />
+        ))}
+      </div>
 
+      {/* Score reveal */}
+      <div className={`${s.scoreBig} ${revealDone ? s.show : ""}`}>
+        {earned} / {total} <span className={s.subtle}>({pct}%)</span>
+      </div>
+
+      {/* Actions + prominent email capture */}
       <div className={s.actions}>
         <button className={`${s.btn} ${s.ghost}`} onClick={onRestart}>Restart</button>
-
-        <form className={s.form} onSubmit={(e) => { e.preventDefault(); subscribe(); }}>
-          <input
-            className={s.input}
-            type="email"
-            placeholder="Your email for weekly review"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button className={`${s.btn} ${s.primary}`} disabled={state === "saving"}>
-            {state === "saving" ? "Saving…" : "Get weekly review"}
-          </button>
+        <form className={s.cta} onSubmit={(e) => { e.preventDefault(); subscribe(); }}>
+          <div className={s.ctaTitle}>Get a weekly review to stay sharp</div>
+          <div className={s.row}>
+            <input
+              className={s.input}
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <button className={`${s.btn} ${s.primary}`} disabled={state === "saving"}>
+              {state === "saving" ? "Saving…" : "Send it to me"}
+            </button>
+          </div>
           {state === "ok" && <div className={s.success}>{msg}</div>}
           {state === "err" && <div className={s.error}>{msg}</div>}
-          <div className={s.help}>We’ll send tips & a recap once a week. Unsubscribe anytime.</div>
+          <div className={s.help}>Unsubscribe anytime. We’ll never share your email.</div>
         </form>
       </div>
     </div>
   );
-  <EmailModal
-  open={openModal}
-  defaultEmail={email}
-  quizId={quiz.id}
-  earned={earned}
-  total={total}
-  answers={answers}
-  onClose={() => setOpenModal(false)}
-/>
 }
